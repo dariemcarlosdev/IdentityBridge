@@ -287,6 +287,115 @@ this repo proves.
 
 
 
+## Adapting This Pattern to Your Project
+
+This repo is meant to be **read, understood, and ported** — not installed.
+Below is the step-by-step guide for lifting the Adapter + Factory + Strategy
+trio into an existing ASP.NET Core app. Follow it top to bottom; each step
+builds on the previous one.
+
+### Before you start — is this pattern the right fit?
+
+Use it when **all** of these are true:
+
+- Your app must authenticate users against **two or more OIDC providers**
+  at the same time (not just migrate from one to another).
+- Provider selection depends at least partly on **runtime data** (a claim,
+  a tenant, a session) — not purely on static subdomain/path routing you
+  could push to a reverse proxy.
+- Downstream code (controllers, services) needs **one identity shape**,
+  regardless of who authenticated the user.
+
+If you only ever have one IdP, or your segmentation is fully static, this is
+over-engineering — stop here and wire a single scheme (or edge routing).
+
+### Step-by-step port
+
+1. **Define your normalized contract first.** Copy `IUserProfileService` /
+   `IUserProfile` and trim them to the fields *your* app actually consumes
+   (id, display name, source `idp`, roles/groups — whatever your
+   authorization layer needs). This contract is the whole point; get it
+   right before writing a single adapter. Keep it minimal (Interface
+   Segregation) — do not expose raw claims or tokens through it.
+
+2. **Write one Adapter per provider.** For each IdP, create a class
+   implementing `IUserProfileService` that:
+   - sets its own `Idp` key string (`"entra"`, `"auth0"`, `"okta"`, …) —
+     the adapter owns this key, nothing else hardcodes it;
+   - wraps that provider's upstream API (Graph API, Auth0 Management API,
+     Cognito Identity API, etc.) and maps its provider-specific claims/data
+     onto your `IUserProfile`.
+   Use `EntraUserProfileService` / `Auth0UserProfileService` /
+   `CognitoUserProfileService` as templates.
+
+3. **Register each provider as its own named auth scheme with its own
+   dedicated cookie scheme.** This is the load-bearing invariant — **never
+   share a cookie name across providers.** In this repo the cookie schemes
+   are `ib.entra`, `ib.auth0`, `ib.cognito`. Pick a prefix for your app and
+   keep them distinct. Shared cookies are the single most common cause of
+   silent multi-IdP session bugs.
+
+4. **Add the claims transformation.** Copy
+   `IdentityBridgeClaimsTransformation` and adapt it to stamp the
+   normalized `idp` claim onto each principal after sign-in. This claim is
+   the routing key the Factory reads later — without it, `Resolve` has
+   nothing to look up.
+
+5. **Wire the Strategy (request dispatch).** In `Program.cs`, use
+   `AddPolicyScheme` + `ForwardDefaultSelector` to dispatch each incoming
+   request to the correct already-registered scheme. Replace this repo's
+   `?idp=` selector with *your* real signal — path, subdomain, tenant, or
+   existing session cookie. The selector only *dispatches*; it must not
+   construct anything.
+
+6. **Register adapters in DI as `IUserProfileService`.** Register every
+   adapter against the same interface:
+   ```csharp
+   builder.Services.AddScoped<IUserProfileService, EntraUserProfileService>();
+   builder.Services.AddScoped<IUserProfileService, Auth0UserProfileService>();
+   // ...one line per provider
+   builder.Services.AddScoped<IUserProfileServiceFactory, UserProfileServiceFactory>();
+   ```
+   The factory receives all of them as `IEnumerable<IUserProfileService>`
+   and builds its `idp → adapter` dictionary once at construction.
+
+7. **Consume only through the abstractions.** Controllers and services call
+   `factory.Resolve(User)` and depend on `IUserProfileService` /
+   `IUserProfileServiceFactory` **only** — never on a concrete adapter
+   class. This is what makes adding/swapping/mocking providers free.
+
+8. **Enable Data Protection key-ring sharing before you scale past one
+   node.** Each provider's OIDC state/nonce cookie depends on it. Persist
+   keys to a shared store (Redis, blob, shared filesystem) — otherwise
+   logins break intermittently behind a load balancer.
+
+9. **Replace every fake config value.** Swap all placeholders
+   (`REPLACE_WITH_TENANT_ID`, authority URLs, client IDs/secrets) for your
+   real values, sourced from your secrets store — never commit real
+   secrets.
+
+### Adding a 4th provider later
+
+Once ported, extending is deliberately cheap: write one new adapter, add
+one DI registration line, add its scheme + cookie in `Program.cs`, and
+teach the selector its routing signal. You touch **zero** existing factory
+or call-site code — the dictionary picks the new adapter up on next
+startup. That auto-pickup is the Open/Closed principle paying for itself.
+
+### Porting checklist
+
+- [ ] Normalized `IUserProfile` / `IUserProfileService` contract trimmed to your app's needs
+- [ ] One Adapter per provider, each with a unique `Idp` key
+- [ ] Each provider has its own named scheme **and** its own dedicated cookie scheme
+- [ ] Claims transformation stamps the normalized `idp` claim
+- [ ] Policy scheme + `ForwardDefaultSelector` dispatches on your real routing signal
+- [ ] All adapters registered in DI as `IUserProfileService`; factory registered
+- [ ] Controllers/services depend only on the abstractions
+- [ ] Data Protection key-ring shared (before multi-node deploy)
+- [ ] All fake config replaced with real values from a secrets store
+
+---
+
 ## Status
 
 MVP reference implementation — intended to be forked and adapted per

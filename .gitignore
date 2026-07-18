@@ -379,3 +379,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/.clinerules/caveman.md
+/.github/copilot-instructions.md
+/.windsurf/rules/caveman.md
