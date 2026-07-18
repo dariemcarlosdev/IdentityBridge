@@ -1,6 +1,6 @@
 # IdentityBridge
 
-![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)
+![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet&logoColor=white)
 ![C#](https://img.shields.io/badge/C%23-74%25-239120?logo=csharp&logoColor=white)
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-Web_App-512BD4?logo=dotnet&logoColor=white)
 ![Azure Entra ID](https://img.shields.io/badge/Azure_Entra_ID-OIDC-0078D4?logo=microsoftazure&logoColor=white)
