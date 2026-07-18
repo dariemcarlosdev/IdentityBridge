@@ -1,5 +1,15 @@
 # IdentityBridge
 
+![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)
+![C#](https://img.shields.io/badge/C%23-74%25-239120?logo=csharp&logoColor=white)
+![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-Web_App-512BD4?logo=dotnet&logoColor=white)
+![Azure Entra ID](https://img.shields.io/badge/Azure_Entra_ID-OIDC-0078D4?logo=microsoftazure&logoColor=white)
+![Auth0](https://img.shields.io/badge/Auth0-OIDC-EB5424?logo=auth0&logoColor=white)
+![Amazon Cognito](https://img.shields.io/badge/Amazon_Cognito-OIDC-FF9900?logo=amazonaws&logoColor=white)
+![License](https://img.shields.io/github/license/dariemcarlosdev/IdentityBridge)
+![Last Commit](https://img.shields.io/github/last-commit/dariemcarlosdev/IdentityBridge)
+![MVP](https://img.shields.io/badge/status-MVP%20reference-blue)
+
 **A production-ready MVP pattern for ASP.NET Core apps that authenticate users across multiple identity providers — Azure Entra ID, Auth0 (by Okta), and Amazon Cognito — behind one normalized identity contract.**
 
 **Solution Architected and Designed by**: Dariem C. Macias Mora. ( Sr. Software Engineer, AI-Driven Senior Engineer )
@@ -76,9 +86,9 @@ specific part of the system breaks.
 
 | Pattern | Problem solved | Key implementation |
 |---|---|---|
-| **Adapter** | Each IdP shapes identity data differently — normalize to one contract | `Services/` (6 files): `IUserProfileService`/`IUserProfile` contract + `EntraUserProfileService`/`Auth0UserProfileService`/`CognitoUserProfileService` normalizing raw claims |
+| **Adapter** | Each IdP shapes identity data differently — normalize to one contract | `Services/` (6 files): `IUserProfileService`/`IUserProfile` contract + `EntraUserProfileService`/`Auth0UserProfileService`/`CognitoUserProfileService` implementations |
 | **Factory** | Pick the right adapter at runtime, keep call sites provider-agnostic | `UserProfileServiceFactory.Resolve(ClaimsPrincipal)` reads the normalized `idp` claim, returns the matching adapter |
-| **Strategy** | Dispatch each request to the correct already-registered auth scheme | `Program.cs`: `AddPolicyScheme` + `ForwardDefaultSelector` by `?idp=`, over 3 distinct cookie schemes (`ib.entra`/`ib.auth0`/`ib.cognito`) |
+| **Strategy** | Dispatch each request to the correct already-registered auth scheme | `Program.cs`: `AddPolicyScheme` + `ForwardDefaultSelector` by `?idp=`, over 3 distinct cookie schemes (`ib.entra`, `ib.auth0`, `ib.cognito`) |
 
 ### 1. Adapter — *the defining pattern of this solution*
 
