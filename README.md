@@ -2,9 +2,7 @@
 
 **A production-ready MVP pattern for ASP.NET Core apps that authenticate users across multiple identity providers — Azure Entra ID, Auth0 (by Okta), and Amazon Cognito — behind one normalized identity contract.**
 
-**Architect:** Dariem Carlos Macias — Sr. Software Developer.
-
-Solution Architected and Designed by: Dariem C. Macias Mora. ( Sr. Software Engineer, AI-Driven Senior Engineer )
+**Solution Architected and Designed by**: Dariem C. Macias Mora. ( Sr. Software Engineer, AI-Driven Senior Engineer )
 
 ---
 
