@@ -1,3 +1,5 @@
 <Solution>
-  <Project Path="IdentityBridge.csproj" />
+  <Folder Name="/src/">
+    <Project Path="IdentityBridge.csproj" />
+  </Folder>
 </Solution>
