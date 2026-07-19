@@ -1,4 +1,4 @@
-# Identity Bridge Authenticator
+# PolyIdentity Bridge-Gateway
 
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet&logoColor=white)
 ![C#](https://img.shields.io/badge/C%23_14.0-74%25-239120?logo=csharp&logoColor=white)
@@ -10,7 +10,9 @@
 ![Last Commit](https://img.shields.io/github/last-commit/dariemcarlosdev/IdentityBridge)
 ![MVP](https://img.shields.io/badge/status-MVP%20reference-blue)
 
-**A production-ready MVP pattern for ASP.NET Core apps that authenticate users across multiple identity providers — Azure Entra ID, Auth0 (by Okta), and Amazon Cognito — behind one normalized identity contract.**
+**A production-ready MVP pattern for ASP.NET Core apps that authenticate users across multiple identity providers — Azure Entra ID, Auth0 (by Okta), and Amazon Cognito — behind one normalized identity contract.
+It takes the shape of a PolyAuth Gateway, but is implemented entirely in the app layer (not infra) and is meant to be forked and adapted per project. It demonstrates the Adapter + Factory + Strategy pattern trio, plus a claims transformation, to keep downstream code provider-agnostic while supporting multiple IdPs simultaneously.
+**
 
 **Solution Architected and Designed by**: Dariem C. Macias Mora. ( Sr. Software Engineer, AI-Driven Senior Engineer )
 
@@ -51,13 +53,14 @@ where it makes sense.
   existing session — without per-request DB calls.
 - **Claims normalization** — one consistent identity shape for the rest of
   the app, regardless of which provider authenticated the user. Each IdP
-  shapes claims differently:
-  - **Entra ID** → `oid`, `tid`, `preferred_username`
-  - **Auth0** → `sub` (`auth0|xxx` / `google-oauth2|xxx`), namespaced custom
-    claims (`https://yourapp.com/roles`)
-  - **Cognito** → `cognito:username`, `cognito:groups`, `token_use`
-- **Provider-specific services** — profile lookups, role/group mapping,
-  etc., resolved by normalized claim, not string comparisons on provider name.
+  shapes claims differently; this MVP's adapters read:
+  - **Entra ID** → `oid`, `preferred_username`
+  - **Auth0** → `sub` (`auth0|xxx`), `name`
+  - **Cognito** → `sub`, `cognito:username`
+- **Provider-specific services** — profile lookups (id, display name)
+  resolved by normalized claim, not string comparisons on provider name.
+  Role/group mapping is not implemented in this MVP — see
+  [Not Included](#not-included--adapt-per-project).
 - **Multi-instance safety** — Data Protection key-ring sharing wired in,
   required once the app scales past a single node (each provider's OIDC
   state/nonce cookie depends on it).
@@ -66,15 +69,23 @@ where it makes sense.
 
 ## Providers Covered in This MVP
 
-| Provider | Protocol | Notes |
+| Provider | Protocol (production) | MVP adapter reads |
 |---|---|---|
-| Azure Entra ID | OIDC via `Microsoft.Identity.Web` | Multi-tenant aware, Graph API profile stub |
-| Auth0 (by Okta) | Generic OIDC | Universal Login redirect flow, custom claim namespace handling |
-| Amazon Cognito | OIDC via Hosted UI | User Pool + App Client config, `cognito:groups` → app roles mapping |
+| Azure Entra ID | OIDC via `Microsoft.Identity.Web` | `oid`, `preferred_username` only — no Graph API call, no tenant logic |
+| Auth0 (by Okta) | Generic OIDC | `sub`, `name` only — no namespaced custom claims |
+| Amazon Cognito | OIDC via Hosted UI | `sub`, `cognito:username` only — no `cognito:groups` role mapping |
 
 Each provider is wired as its **own named authentication scheme with its
 own dedicated cookie scheme** — never sharing a cookie name, which is the
 single most common cause of silent session bugs in multi-IdP setups.
+
+> **Note:** the "Protocol (production)" column describes what each
+> provider normally uses in production — this MVP does not perform a real
+> OIDC handshake with any provider. `Program.cs` only wires the cookie
+> schemes and the `PolicyScheme` dispatch selector. Sign-in is simulated
+> via `AccountController.Simulate`, which injects provider-shaped raw
+> claims directly into the matching cookie scheme. No `AddOpenIdConnect`
+> or provider SDK is registered.
 
 ---
 
@@ -278,6 +289,11 @@ this repo proves.
 - Production secrets management (Key Vault / AWS Secrets Manager / Auth0
   Vault integration).
 - MFA / step-up auth policies per provider.
+- Role/group mapping from IdP-specific claims (e.g. Cognito
+  `cognito:groups`, Auth0 namespaced roles). The normalized `IUserProfile`
+  contract has room for it, but no adapter in this MVP populates it —
+  add a `Roles`/`Groups` member and map it per adapter if your fork needs
+  authorization beyond identity.
 - The reverse-proxy/YARP layer for infra-level routing, useful when
   segmentation is static enough to push to the edge instead of the app
   (e.g. `entra.yourapp.com`, `partners.yourapp.com` via Cognito,
