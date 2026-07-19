@@ -14,7 +14,7 @@
 It takes the shape of a PolyAuth Gateway, but is implemented entirely in the app layer (not infra) and is meant to be forked and adapted per project. It demonstrates the Adapter + Factory + Strategy pattern trio, plus a claims transformation, to keep downstream code provider-agnostic while supporting multiple IdPs simultaneously.
 **
 
-**Solution Architected and Designed by**: Dariem C. Macias Mora. ( Sr. Software Engineer, AI-Driven Senior Engineer )
+**Solution Architected and Designed by**: Dariem C. Macias Mora. ( Sr. Software Engineer)
 
 ---
 
