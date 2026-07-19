@@ -10,7 +10,7 @@
 ![Last Commit](https://img.shields.io/github/last-commit/dariemcarlosdev/IdentityBridge)
 ![MVP](https://img.shields.io/badge/status-MVP%20reference-blue)
 
-**A production-ready MVP pattern for ASP.NET Core apps that authenticate users across multiple identity providers — Azure Entra ID, Auth0 (by Okta), and Amazon Cognito — behind one normalized identity contract.
+**A production-ready MVP pattern for ASP.NET Core apps that authenticate users across multiple identity providers** — Azure Entra ID, Auth0 (by Okta), and Amazon Cognito — behind one normalized identity contract.
 It takes the shape of a PolyAuth Gateway, but is implemented entirely in the app layer (not infra) and is meant to be forked and adapted per project. It demonstrates the Adapter + Factory + Strategy pattern trio, plus a claims transformation, to keep downstream code provider-agnostic while supporting multiple IdPs simultaneously.
 **
 
