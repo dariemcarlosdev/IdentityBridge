@@ -227,7 +227,7 @@ off: swapping, mocking, or adding providers never touches consuming code.
 
 ---
 
-## Project Rules (for contributors & AI agents if you are a AI-Driven Senior Engineer)
+## Project Rules (for Contributors, Senior Engineers & Architects)exit
 
 - **All configuration values are fake, on purpose.** Every ClientId,
   TenantId, Authority URL, or secret in this repo is a placeholder
